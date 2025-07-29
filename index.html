@@ -13,8 +13,9 @@
             background-color: #f0f4f8;
             color: #334155;
             display: flex;
+            flex-direction: column; /* Changed to column to place buttons at the very bottom */
             justify-content: center;
-            align-items: flex-start;
+            align-items: center; /* Center content horizontally */
             min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
@@ -29,6 +30,7 @@
             display: flex;
             flex-direction: column; /* Stack vertically on small screens */
             gap: 30px;
+            margin-bottom: 20px; /* Add margin to separate from buttons */
         }
 
         /* Responsive layout for larger screens */
@@ -206,6 +208,37 @@
         }
         .grid-item:last-child {
             margin-bottom: 0;
+        }
+        /* Removed .signature style as the element is removed */
+
+        /* Styles for the smaller export buttons at the bottom */
+        .export-buttons-container {
+            width: 100%;
+            max-width: 1600px; /* Match container max-width */
+            display: flex;
+            flex-direction: column; /* Stack on mobile */
+            gap: 1rem; /* Space between buttons */
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        @media (min-width: 640px) { /* sm breakpoint */
+            .export-buttons-container {
+                flex-direction: row; /* Side-by-side on larger screens */
+            }
+        }
+        .export-buttons-container button {
+            padding: 0.75rem 1.25rem; /* Smaller padding */
+            font-size: 0.875rem; /* text-sm */
+            border-radius: 0.5rem; /* rounded-lg */
+            width: 100%; /* Full width on mobile */
+            max-width: 200px; /* Max width for individual button */
+        }
+        @media (min-width: 640px) {
+             .export-buttons-container button {
+                width: auto; /* Auto width on larger screens */
+             }
         }
     </style>
 </head>
@@ -531,7 +564,19 @@
                 </table>
             </div>
         </div>
+        <!-- Removed the signature div -->
     </div>
+
+    <!-- Export Buttons Container -->
+    <div class="export-buttons-container">
+        <button onclick="exportAllPDF()" class="bg-red-600 text-white shadow hover:bg-red-700 transition">Esporta in PDF</button>
+        <button onclick="exportAllExcel()" class="bg-green-600 text-white shadow hover:bg-green-700 transition">Esporta in Excel</button>
+    </div>
+
+    <!-- External libraries for export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
         let budgetChart; // Global variable for the expense chart instance
@@ -618,179 +663,161 @@
             updateBudget(); // Update budget after adding a new item
         }
 
-        // Function to calculate and update the budget
+        // Function to calculate and update the budget and return structured data
         function updateBudget() {
             // Retrieve values from inputs and selects
-            const numAthletes = parseInt(document.getElementById('numAthletes').value) || 0;
-            const athleteRAL = parseFloat(document.getElementById('athleteRAL').value) || 0;
-            const numGM = parseInt(document.getElementById('numGM').value) || 0;
-            const gmRAL = parseFloat(document.getElementById('gmRAL').value) || 0;
-            const numDS = parseInt(document.getElementById('numDS').value) || 0;
-            const dsRAL = parseFloat(document.getElementById('dsRAL').value) || 0;
-            const numMechanics = parseInt(document.getElementById('numMechanics').value) || 0;
-            const mechanicRAL = parseFloat(document.getElementById('mechanicRAL').value) || 0;
-            const numMasseurs = parseInt(document.getElementById('numMasseurs').value) || 0;
-            const masseurRAL = parseFloat(document.getElementById('masseurRAL').value) || 0;
-            const numOtherStaff = parseInt(document.getElementById('numOtherStaff').value) || 0;
-            const otherStaffRAL = parseFloat(document.getElementById('otherStaffRAL').value) || 0;
+            const inputParams = {
+                numAthletes: parseInt(document.getElementById('numAthletes').value) || 0,
+                athleteRAL: parseFloat(document.getElementById('athleteRAL').value) || 0,
+                numGM: parseInt(document.getElementById('numGM').value) || 0,
+                gmRAL: parseFloat(document.getElementById('gmRAL').value) || 0,
+                numDS: parseInt(document.getElementById('numDS').value) || 0,
+                dsRAL: parseFloat(document.getElementById('dsRAL').value) || 0,
+                numMechanics: parseInt(document.getElementById('numMechanics').value) || 0,
+                mechanicRAL: parseFloat(document.getElementById('mechanicRAL').value) || 0,
+                numMasseurs: parseInt(document.getElementById('numMasseurs').value) || 0,
+                masseurRAL: parseFloat(document.getElementById('masseurRAL').value) || 0,
+                numOtherStaff: parseInt(document.getElementById('numOtherStaff').value) || 0,
+                otherStaffRAL: parseFloat(document.getElementById('otherStaffRAL').value) || 0,
 
-            const costPerDayPerAthlete = parseFloat(document.getElementById('costPerDayPerAthlete').value) || 0;
-            const numRaceDays = parseInt(document.getElementById('numRaceDays').value) || 0;
-            const costPerRaceEntry = parseFloat(document.getElementById('costPerRaceEntry').value) || 0;
+                costPerDayPerAthlete: parseFloat(document.getElementById('costPerDayPerAthlete').value) || 0,
+                numRaceDays: parseInt(document.getElementById('numRaceDays').value) || 0,
+                costPerRaceEntry: parseFloat(document.getElementById('costPerRaceEntry').value) || 0,
 
-            // Vehicle and mileage fields (clean text input values before parsing)
-            const numCars = parseInt(document.getElementById('numCars').value) || 0;
-            const kmPerCar = parseFloat(document.getElementById('kmPerCar').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const costPerKmCar = parseFloat(document.getElementById('costPerKmCar').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
+                numCars: parseInt(document.getElementById('numCars').value) || 0,
+                kmPerCar: parseFloat(document.getElementById('kmPerCar').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                costPerKmCar: parseFloat(document.getElementById('costPerKmCar').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
 
-            const numVans = parseInt(document.getElementById('numVans').value) || 0;
-            const kmPerVan = parseFloat(document.getElementById('kmPerVan').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const costPerKmVans = parseFloat(document.getElementById('costPerKmVans').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
+                numVans: parseInt(document.getElementById('numVans').value) || 0,
+                kmPerVan: parseFloat(document.getElementById('kmPerVan').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                costPerKmVans: parseFloat(document.getElementById('costPerKmVans').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
 
-            const numBus = parseInt(document.getElementById('numBus').value) || 0;
-            const kmPerBus = parseFloat(document.getElementById('kmPerBus').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const costPerKmBus = parseFloat(document.getElementById('costPerKmBus').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
+                numBus: parseInt(document.getElementById('numBus').value) || 0,
+                kmPerBus: parseFloat(document.getElementById('kmPerBus').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                costPerKmBus: parseFloat(document.getElementById('costPerKmBus').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
 
-            // These are treated as ANNUAL leasing/purchase costs in this simulator
-            const costCars = parseFloat(document.getElementById('costCars').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const costVans = parseFloat(document.getElementById('costVans').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const costBus = parseFloat(document.getElementById('costBus').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const costVehicleOutfitting = parseFloat(document.getElementById('costVehicleOutfitting').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const materialCost = parseFloat(document.getElementById('materialCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const hqCost = parseFloat(document.getElementById('hqCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const insuranceCost = parseFloat(document.getElementById('insuranceCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const commsMarketingCost = parseFloat(document.getElementById('commsMarketingCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const bankGuaranteeCost = parseFloat(document.getElementById('bankGuaranteeCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
+                costCars: parseFloat(document.getElementById('costCars').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                costVans: parseFloat(document.getElementById('costVans').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                costBus: parseFloat(document.getElementById('costBus').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                costVehicleOutfitting: parseFloat(document.getElementById('costVehicleOutfitting').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                materialCost: parseFloat(document.getElementById('materialCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                hqCost: parseFloat(document.getElementById('hqCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                insuranceCost: parseFloat(document.getElementById('insuranceCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                commsMarketingCost: parseFloat(document.getElementById('commsMarketingCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                bankGuaranteeCost: parseFloat(document.getElementById('bankGuaranteeCost').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
 
-            // Calculate expenses
-            const athletesCost = numAthletes * athleteRAL;
-            const gmCost = numGM * gmRAL;
-            const dsCost = numDS * dsRAL;
-            const mechanicsCost = numMechanics * mechanicRAL;
-            const masseursCost = numMasseurs * masseurRAL;
-            const otherStaffCost = numOtherStaff * otherStaffRAL;
-            const vittoAlloggiCost = numAthletes * costPerDayPerAthlete * numRaceDays;
-            const iscrizioniGareCost = numRaceDays * costPerRaceEntry;
+                sponsor1Amount: parseFloat(document.getElementById('sponsor1Amount').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                sponsor2Amount: parseFloat(document.getElementById('sponsor2Amount').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+                minorSponsorsAmount: parseFloat(document.getElementById('minorSponsorsAmount').value.replace(/\./g, '').replace(/,/g, '.')) || 0,
+            };
 
-            const totalFuelAndTollsCost =
-                (numCars * kmPerCar * costPerKmCar) +
-                (numVans * kmPerVan * costPerKmVans) +
-                (numBus * kmPerBus * costPerKmBus);
+            // Calculate personnel expenses
+            const personnelExpenses = [
+                { name: 'Costo Atleti', amount: inputParams.numAthletes * inputParams.athleteRAL },
+                { name: 'Costo General Manager', amount: inputParams.numGM * inputParams.gmRAL },
+                { name: 'Costo Direttori Sportivi', amount: inputParams.numDS * inputParams.dsRAL },
+                { name: 'Costo Meccanici', amount: inputParams.numMechanics * inputParams.mechanicRAL },
+                { name: 'Costo Massaggiatori', amount: inputParams.numMasseurs * inputParams.masseurRAL },
+                { name: 'Costo Altro Staff', amount: inputParams.numOtherStaff * inputParams.otherStaffRAL }
+            ].filter(item => item.amount > 0);
 
-            // Array of main expenses for chart and table (ordered by category)
-            let expenses = [
-                // Personnel
-                { name: 'Costo Atleti', amount: athletesCost },
-                { name: 'Costo General Manager', amount: gmCost },
-                { name: 'Costo Direttori Sportivi', amount: dsCost },
-                { name: 'Costo Meccanici', amount: mechanicsCost },
-                { name: 'Costo Massaggiatori', amount: masseursCost },
-                { name: 'Costo Altro Staff', amount: otherStaffCost },
-                // Logistics and Vehicles
-                { name: 'Vitto e Alloggi', amount: vittoAlloggiCost },
-                { name: 'Iscrizioni Gare', amount: iscrizioniGareCost },
-                { name: 'Materiale Tecnico', amount: materialCost },
-                { name: 'Costo Auto (leasing/acquisto)', amount: costCars },
-                { name: 'Costo Furgoni (leasing/acquisto)', amount: costVans },
-                { name: 'Costo Pullman (leasing/acquisto)', amount: costBus },
-                { name: 'Allestimento Mezzi', amount: costVehicleOutfitting },
-                { name: 'Carburante e Pedaggi', amount: totalFuelAndTollsCost },
-                { name: 'Sede Operativa', amount: hqCost },
-                { name: 'Assicurazioni e Licenze', amount: insuranceCost },
-                { name: 'Comunicazione e Marketing', amount: commsMarketingCost },
-                { name: 'Garanzia Bancaria', amount: bankGuaranteeCost }
-            ];
+            // Calculate logistics and vehicle expenses
+            const logisticsVehiclesExpenses = [
+                { name: 'Vitto e Alloggi', amount: inputParams.numAthletes * inputParams.costPerDayPerAthlete * inputParams.numRaceDays },
+                { name: 'Iscrizioni Gare', amount: inputParams.numRaceDays * inputParams.costPerRaceEntry },
+                { name: 'Materiale Tecnico', amount: inputParams.materialCost },
+                { name: 'Costo Auto (leasing/acquisto)', amount: inputParams.costCars },
+                { name: 'Costo Furgoni (leasing/acquisto)', amount: inputParams.costVans },
+                { name: 'Costo Pullman (leasing/acquisto)', amount: inputParams.costBus },
+                { name: 'Allestimento Mezzi', amount: inputParams.costVehicleOutfitting },
+                { name: 'Carburante e Pedaggi', amount: (inputParams.numCars * inputParams.kmPerCar * inputParams.costPerKmCar) + (inputParams.numVans * inputParams.kmPerVan * inputParams.costPerKmVans) + (inputParams.numBus * inputParams.kmPerBus * inputParams.costPerKmBus) },
+                { name: 'Sede Operativa', amount: inputParams.hqCost },
+                { name: 'Assicurazioni e Licenze', amount: inputParams.insuranceCost },
+                { name: 'Comunicazione e Marketing', amount: inputParams.commsMarketingCost },
+                { name: 'Garanzia Bancaria', amount: inputParams.bankGuaranteeCost }
+            ].filter(item => item.amount > 0);
 
-            // Add custom expenses
+            // Get custom expenses
+            const customExpenses = [];
             document.querySelectorAll('#customExpensesContainer .custom-item').forEach(itemDiv => {
                 const description = itemDiv.querySelector('.custom-expense-description').value;
                 const amount = parseFloat(itemDiv.querySelector('.custom-expense-amount').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-                if (description) {
-                    expenses.push({ name: description, amount: amount });
+                if (description && amount > 0) {
+                    customExpenses.push({ name: description, amount: amount });
                 }
             });
 
-            // Calculate total expenses before calculating percentages
-            let totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
-
-            // Calculate percentages for each expense item
-            expenses = expenses.map(item => ({
+            // Combine all expenses
+            let allExpenses = [...personnelExpenses, ...logisticsVehiclesExpenses, ...customExpenses];
+            let totalExpenses = allExpenses.reduce((sum, item) => sum + item.amount, 0);
+            allExpenses = allExpenses.map(item => ({
                 ...item,
                 percentage: totalExpenses > 0 ? (item.amount / totalExpenses * 100) : 0
             }));
 
-            // Update expenses table
-            const budgetTableBody = document.querySelector('#budgetTable tbody');
-            budgetTableBody.innerHTML = '';
+            // Calculate revenues
+            const sponsorRevenues = [
+                { name: 'Sponsor 1 (Nome Primo)', amount: inputParams.sponsor1Amount },
+                { name: 'Sponsor 2 (Nome Secondo)', amount: inputParams.sponsor2Amount },
+                { name: 'Sponsor Minori (Somma)', amount: inputParams.minorSponsorsAmount }
+            ].filter(item => item.amount > 0);
 
-            expenses.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>${formatCurrency(item.amount)}</td>
-                    <td>${item.percentage.toFixed(2)}%</td>
-                `;
-                budgetTableBody.appendChild(row);
-            });
-
-            // Update total expenses
-            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
-
-            // --- Calculate Revenues ---
-            const sponsor1Amount = parseFloat(document.getElementById('sponsor1Amount').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const sponsor2Amount = parseFloat(document.getElementById('sponsor2Amount').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-            const minorSponsorsAmount = parseFloat(document.getElementById('minorSponsorsAmount').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-
-            let revenues = [
-                { name: 'Sponsor 1 (Nome Primo)', amount: sponsor1Amount },
-                { name: 'Sponsor 2 (Nome Secondo)', amount: sponsor2Amount },
-                { name: 'Sponsor Minori (Somma)', amount: minorSponsorsAmount }
-            ];
-
-            // Add custom revenues
+            // Get custom revenues
+            const customRevenues = [];
             document.querySelectorAll('#customRevenuesContainer .custom-item').forEach(itemDiv => {
                 const description = itemDiv.querySelector('.custom-revenue-description').value;
                 const amount = parseFloat(itemDiv.querySelector('.custom-revenue-amount').value.replace(/\./g, '').replace(/,/g, '.')) || 0;
-                if (description) {
-                    revenues.push({ name: description, amount: amount });
+                if (description && amount > 0) {
+                    customRevenues.push({ name: description, amount: amount });
                 }
             });
 
-            let totalRevenues = revenues.reduce((sum, item) => sum + item.amount, 0);
-
-            // Calculate percentages for each revenue item
-            revenues = revenues.map(item => ({
+            let allRevenues = [...sponsorRevenues, ...customRevenues];
+            let totalRevenues = allRevenues.reduce((sum, item) => sum + item.amount, 0);
+            allRevenues = allRevenues.map(item => ({
                 ...item,
                 percentage: totalRevenues > 0 ? (item.amount / totalRevenues * 100) : 0
             }));
 
-            // Update revenues table
-            const revenueTableBody = document.querySelector('#revenueTable tbody');
-            revenueTableBody.innerHTML = '';
+            const netBalance = totalRevenues - totalExpenses;
 
-            revenues.forEach(item => {
+            // Update display tables
+            updateTable(document.querySelector('#budgetTable tbody'), allExpenses, totalExpenses);
+            updateTable(document.querySelector('#revenueTable tbody'), allRevenues, totalRevenues);
+            document.getElementById('totalExpenses').textContent = formatCurrency(totalExpenses);
+            document.getElementById('totalRevenues').textContent = formatCurrency(totalRevenues);
+            document.getElementById('netBalance').textContent = formatCurrency(netBalance);
+
+            // Update charts
+            updateChart(budgetChart, 'budgetChart', allExpenses, totalExpenses);
+            updateChart(sponsorChart, 'sponsorChart', sponsorRevenues, totalRevenues); // Sponsor chart only uses sponsor revenues
+
+            // Return structured data for export
+            return {
+                inputParams,
+                personnelExpenses,
+                logisticsVehiclesExpenses,
+                customExpenses,
+                sponsorRevenues,
+                customRevenues,
+                totalExpenses,
+                totalRevenues,
+                netBalance
+            };
+        }
+
+        // Helper function to update a table
+        function updateTable(tbodyElement, dataItems, totalAmount) {
+            tbodyElement.innerHTML = '';
+            dataItems.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${item.name}</td>
                     <td>${formatCurrency(item.amount)}</td>
                     <td>${item.percentage.toFixed(2)}%</td>
                 `;
-                revenueTableBody.appendChild(row);
+                tbodyElement.appendChild(row);
             });
-
-            // Update total revenues
-            document.getElementById('totalRevenues').textContent = formatCurrency(totalRevenues);
-
-            // --- Net Balance ---
-            const netBalance = totalRevenues - totalExpenses;
-            document.getElementById('netBalance').textContent = formatCurrency(netBalance);
-
-            // --- Update Charts ---
-            const expensesForChart = expenses.filter(item => item.amount > 0);
-            updateChart(budgetChart, 'budgetChart', expensesForChart, totalExpenses);
-
-            const revenuesForSponsorChart = revenues.filter(item => item.amount > 0);
-            updateChart(sponsorChart, 'sponsorChart', revenuesForSponsorChart, totalRevenues);
         }
 
         // Generic function to update a chart
@@ -857,8 +884,6 @@
 
         // Add event listeners to all inputs and selects for real-time budget update
         document.querySelectorAll('.input-section input, .input-section select').forEach(element => {
-            // Only 'number' inputs or 'select' elements have direct 'input' listeners
-            // 'text' inputs with formatting have their 'focus'/'blur' listeners
             if (element.type === 'number' || element.tagName === 'SELECT') {
                 element.addEventListener('input', updateBudget);
             }
@@ -866,56 +891,139 @@
 
         // Initial budget update on page load
         window.onload = function() {
-            // Format text input fields on startup
             document.querySelectorAll('input[type="text"]').forEach(element => {
                 if (element.id.includes('KmPer') || element.id.includes('costPerKm')) {
-                     formatDecimalInput(element); // For km/cost per km, allow decimals
+                     formatDecimalInput(element);
                 } else {
-                    formatMonetaryInput(element); // For other large monetary values, no decimals
+                    formatMonetaryInput(element);
                 }
             });
-            updateBudget();
+            updateBudget(); // Initial call to populate tables and charts
         };
     </script>
-<div class="w-full flex flex-col items-center mt-12 mb-6">
-  <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center">
-    <button onclick="exportAllPDF()" class="bg-red-600 text-white px-5 py-3 rounded shadow hover:bg-green-700 transition w-full sm:w-auto">Esporta in PDF</button>
-    <button onclick="exportAllExcel()" class="bg-green-600 text-white px-5 py-3 rounded shadow hover:bg-green-700 transition w-full sm:w-auto">Esporta in Excel</button>
-  </div>
-</div>
     <!-- Librerie esterne per esportazione -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-<script>
-// ESPORTA LA PAGINA IN PDF (compresi grafici, tabelle e dati)
-function exportAllPDF() {
-  const doc = new window.jspdf.jsPDF('p', 'pt', 'a4');
-  const container = document.querySelector('.container');
-  html2canvas(container).then(canvas => {
-    const imgData = canvas.toDataURL('image/png');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = pageWidth;
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    doc.save('simulatore_budget_squadra.pdf');
-  });
-}
+    <script>
+    // ESPORTA LA PAGINA IN PDF (compresi grafici, tabelle e dati)
+    function exportAllPDF() {
+      const doc = new window.jspdf.jsPDF('p', 'pt', 'a4');
+      const container = document.querySelector('.container');
+      html2canvas(container, { scale: 2 }).then(canvas => { // Increased scale for better quality
+        const imgData = canvas.toDataURL('image/png');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = pageWidth;
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-// ESPORTA TUTTE LE TABELLE IN EXCEL (ogni tabella = un foglio)
-function exportAllExcel() {
-  const tables = document.querySelectorAll("table");
-  const wb = XLSX.utils.book_new();
-  tables.forEach((table, idx) => {
-    const ws = XLSX.utils.table_to_sheet(table);
-    XLSX.utils.book_append_sheet(wb, ws, "Tabella" + (idx+1));
-  });
-  XLSX.writeFile(wb, "simulatore_budget_squadra.xlsx");
-}
-</script>
+        let position = 0;
+        const padding = 20; // Padding from top/bottom of page
+
+        // If content exceeds one page, split it
+        if (pdfHeight > pageHeight) {
+            let heightLeft = pdfHeight;
+            let pageNum = 1;
+            while (heightLeft > 0) {
+                const currentY = -position;
+                doc.addImage(imgData, 'PNG', 0, currentY, pdfWidth, pdfHeight);
+                heightLeft -= pageHeight;
+                if (heightLeft > 0) {
+                    doc.addPage();
+                    position += pageHeight;
+                }
+            }
+        } else {
+            doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        }
+        doc.save('simulatore_budget_squadra.pdf');
+      }).catch(error => {
+          console.error("Error generating PDF:", error);
+          alert("Errore nella generazione del PDF. Controlla la console per i dettagli.");
+      });
+    }
+
+    // ESPORTA TUTTE LE TABELLE E DETTAGLI IN EXCEL (ogni categoria = un foglio)
+    function exportAllExcel() {
+      const data = updateBudget(); // Get all structured data
+
+      const wb = XLSX.utils.book_new();
+
+      // --- Foglio 1: Riepilogo Generale ---
+      const wsSummary = XLSX.utils.aoa_to_sheet([
+        ["Riepilogo Generale"],
+        ["Voce", "Importo (€)"],
+        ["Totale Spese Stimate", data.totalExpenses],
+        ["Totale Entrate Stimate", data.totalRevenues],
+        ["Saldo Netto (Entrate - Spese)", data.netBalance]
+      ]);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Riepilogo Generale");
+
+      // --- Foglio 2: Parametri di Input ---
+      const inputData = [["Parametro", "Valore"]];
+      for (const key in data.inputParams) {
+          if (Object.hasOwnProperty.call(data.inputParams, key)) {
+              let value = data.inputParams[key];
+              // Format specific values for better readability in Excel if needed
+              if (key.includes('RAL') || key.includes('Amount') || key.includes('Cost')) {
+                  value = parseFloat(value).toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+              } else if (key.includes('KmPer') || key.includes('costPerKm')) {
+                  value = parseFloat(value).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              }
+              inputData.push([key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()), value]); // Convert camelCase to readable string
+          }
+      }
+      const wsInput = XLSX.utils.aoa_to_sheet(inputData);
+      XLSX.utils.book_append_sheet(wb, wsInput, "Parametri di Input");
+
+      // --- Foglio 3: Spese Personale ---
+      const wsPersonnel = XLSX.utils.json_to_sheet(data.personnelExpenses.map(item => ({
+          Voce: item.name,
+          'Importo (€)': item.amount,
+          'Percentuale (%)': item.percentage.toFixed(2) + '%'
+      })));
+      XLSX.utils.book_append_sheet(wb, wsPersonnel, "Spese Personale");
+
+      // --- Foglio 4: Spese Logistica e Mezzi ---
+      const wsLogisticsVehicles = XLSX.utils.json_to_sheet(data.logisticsVehiclesExpenses.map(item => ({
+          Voce: item.name,
+          'Importo (€)': item.amount,
+          'Percentuale (%)': item.percentage.toFixed(2) + '%'
+      })));
+      XLSX.utils.book_append_sheet(wb, wsLogisticsVehicles, "Spese Logistica e Mezzi");
+
+      // --- Foglio 5: Spese Personalizzate ---
+      if (data.customExpenses.length > 0) {
+          const wsCustomExpenses = XLSX.utils.json_to_sheet(data.customExpenses.map(item => ({
+              Voce: item.name,
+              'Importo (€)': item.amount,
+              'Percentuale (%)': item.percentage.toFixed(2) + '%'
+          })));
+          XLSX.utils.book_append_sheet(wb, wsCustomExpenses, "Spese Personalizzate");
+      }
+
+      // --- Foglio 6: Entrate Sponsor ---
+      const wsSponsorRevenues = XLSX.utils.json_to_sheet(data.sponsorRevenues.map(item => ({
+          Voce: item.name,
+          'Importo (€)': item.amount,
+          'Percentuale (%)': item.percentage.toFixed(2) + '%'
+      })));
+      XLSX.utils.book_append_sheet(wb, wsSponsorRevenues, "Entrate Sponsor");
+
+      // --- Foglio 7: Entrate Personalizzate ---
+      if (data.customRevenues.length > 0) {
+          const wsCustomRevenues = XLSX.utils.json_to_sheet(data.customRevenues.map(item => ({
+              Voce: item.name,
+              'Importo (€)': item.amount,
+              'Percentuale (%)': item.percentage.toFixed(2) + '%'
+          })));
+          XLSX.utils.book_append_sheet(wb, wsCustomRevenues, "Entrate Personalizzate");
+      }
+
+      XLSX.writeFile(wb, "simulatore_budget_squadra_dettagliato.xlsx");
+    }
+    </script>
 </body>
 </html>
-

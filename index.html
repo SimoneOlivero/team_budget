@@ -877,6 +877,43 @@
             updateBudget();
         };
     </script>
+    <div class="flex gap-4 mt-12 mb-4 justify-center">
+  <button onclick="exportAllPDF()" class="bg-red-600 text-white px-5 py-3 rounded shadow hover:bg-red-700 transition">Esporta TUTTO in PDF</button>
+  <button onclick="exportAllExcel()" class="bg-green-600 text-white px-5 py-3 rounded shadow hover:bg-green-700 transition">Esporta TUTTO in Excel</button>
+</div>
+    <!-- Librerie esterne per esportazione -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+// ESPORTA LA PAGINA IN PDF (compresi grafici, tabelle e dati)
+function exportAllPDF() {
+  const doc = new window.jspdf.jsPDF('p', 'pt', 'a4');
+  const container = document.querySelector('.container');
+  html2canvas(container).then(canvas => {
+    const imgData = canvas.toDataURL('image/png');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = pageWidth;
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    doc.save('simulatore_budget_squadra.pdf');
+  });
+}
+
+// ESPORTA TUTTE LE TABELLE IN EXCEL (ogni tabella = un foglio)
+function exportAllExcel() {
+  const tables = document.querySelectorAll("table");
+  const wb = XLSX.utils.book_new();
+  tables.forEach((table, idx) => {
+    const ws = XLSX.utils.table_to_sheet(table);
+    XLSX.utils.book_append_sheet(wb, ws, "Tabella" + (idx+1));
+  });
+  XLSX.writeFile(wb, "simulatore_budget_squadra.xlsx");
+}
+</script>
 </body>
 </html>
 

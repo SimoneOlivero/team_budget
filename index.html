@@ -877,9 +877,11 @@
             updateBudget();
         };
     </script>
-    <div class="flex gap-4 mt-12 mb-4 justify-center">
-  <button onclick="exportAllPDF()" class="bg-red-600 text-white px-5 py-3 rounded shadow hover:bg-red-700 transition">Esporta TUTTO in PDF</button>
-  <button onclick="exportAllExcel()" class="bg-green-600 text-white px-5 py-3 rounded shadow hover:bg-green-700 transition">Esporta TUTTO in Excel</button>
+<div class="w-full flex flex-col items-center mt-12 mb-6">
+  <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center">
+    <button onclick="exportAllPDF()" class="bg-red-600 text-white px-5 py-3 rounded shadow hover:bg-green-700 transition w-full sm:w-auto">Esporta in PDF</button>
+    <button onclick="exportAllExcel()" class="bg-green-600 text-white px-5 py-3 rounded shadow hover:bg-green-700 transition w-full sm:w-auto">Esporta in Excel</button>
+  </div>
 </div>
     <!-- Librerie esterne per esportazione -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
